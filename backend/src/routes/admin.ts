@@ -1,4 +1,6 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
+import path from "node:path";
+import path from "node:path";
 import { Router } from "express";
 import braces from "braces";
 import { rateLimit } from "express-rate-limit";
@@ -33,9 +35,19 @@ function wrapText(value: string, width: number): string {
   return lines.join("\n");
 }
 
-router.get("/export", (req, res) => {
-  const file = String(req.query.file ?? "notas.txt");
-  exec(`cat ./exports/${file}`, (error, stdout) => {
+  const rawFile = String(req.query.file ?? "notas.txt");
+  if (!/^[a-zA-Z0-9._-]+$/.test(rawFile) || rawFile.includes("..")) {
+    res.status(400).json({ error: "Nombre de archivo inválido" });
+    return;
+  }
+  const safeFile = path.basename(rawFile);
+  execFile("cat", [path.join("./exports", safeFile)], (error, stdout) => {
+  if (!/^[a-zA-Z0-9._-]+$/.test(rawFile) || rawFile.includes("..")) {
+    res.status(400).json({ error: "Nombre de archivo inválido" });
+    return;
+  }
+  const safeFile = path.basename(rawFile);
+  execFile("cat", [path.join("./exports", safeFile)], (error, stdout) => {
     if (error) {
       res.status(500).json({ error: "No se pudo exportar el archivo solicitado" });
       return;
